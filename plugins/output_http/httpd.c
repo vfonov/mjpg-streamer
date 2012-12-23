@@ -1033,12 +1033,14 @@ void *server_thread(void *arg)
             perror("setsockopt(SO_REUSEADDR) failed");
         }
 
+#ifdef IPV6_V6ONLY // guard to be able to compile on systems lack of IPV6 support
         /* IPv6 socket should listen to IPv6 only, otherwise we will get "socket already in use" */
         on = 1;
         if(aip2->ai_family == AF_INET6 && setsockopt(pcontext->sd[i], IPPROTO_IPV6, IPV6_V6ONLY,
                 (const void *)&on , sizeof(on)) < 0) {
             perror("setsockopt(IPV6_V6ONLY) failed");
         }
+#endif
 
         /* perhaps we will use this keep-alive feature oneday */
         /* setsockopt(sd, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on)); */
