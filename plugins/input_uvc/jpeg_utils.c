@@ -6,6 +6,7 @@
 #   Orginally Copyright (C) 2005 2006 Laurent Pinchart &&  Michel Xhaard       #
 #   Modifications Copyright (C) 2006  Gabriel A. Devenyi                       #
 #   Modifications Copyright (C) 2007  Tom Stöveken                             #
+#   Modifications Copyright (C) 2010  Vladimir S, Fonov                        #
 #                                                                              #
 # This program is free software; you can redistribute it and/or modify         #
 # it under the terms of the GNU General Public License as published by         #
@@ -24,10 +25,64 @@
 *******************************************************************************/
 
 #include <stdio.h>
+#ifdef USE_JPEGLIB
 #include <jpeglib.h>
+#else
+#include "../../simplified_jpeg_encoder.h"
+#endif
 #include <stdlib.h>
 
 #include "v4l2uvc.h"
+
+#ifndef USE_JPEGLIB
+/******************************************************************************
+Input Value.: video structure from v4l2uvc.c/h, destination buffer and buffersize
+              the buffer must be large enough, no error/size checking is done!
+Return Value: the buffer will contain the compressed data
+******************************************************************************/
+int compress_yuyv_to_jpeg(struct vdIn *vd, unsigned char *buffer, int size, int quality,uint32_t format) 
+{
+	//TODO: figure out how to convert quality to simple_jpeg_encoder quality
+  static int written;
+	switch(format)
+	{
+		case V4L2_PIX_FMT_YUYV: 
+			written=s_encode_image(vd->framebuffer,buffer,1024,FORMAT_CbCr422,vd->width,vd->height,vd->framesizeIn);
+			break;
+			
+		case V4L2_PIX_FMT_YUV422P: 
+			written=s_encode_image(vd->framebuffer,buffer,1024,FORMAT_CbCr422p,vd->width,vd->height,vd->framesizeIn);
+			break;
+			
+		case V4L2_PIX_FMT_RGB565:
+			//do inplace conversion
+			RGB565_2_YCbCr420(vd->framebuffer,vd->framebuffer,vd->width,vd->height);
+			written=s_encode_image(vd->framebuffer,buffer,1024,FORMAT_CbCr422,vd->width,vd->height,vd->framesizeIn);
+			break;
+			
+		case V4L2_PIX_FMT_RGB24:
+			//do inplace conversion
+			RGB24_2_YCbCr422(vd->framebuffer,vd->framebuffer,vd->width,vd->height);
+			written=s_encode_image(vd->framebuffer,buffer,1024,FORMAT_CbCr422,vd->width,vd->height,vd->framesizeIn);
+			break;
+			
+		case V4L2_PIX_FMT_RGB32:
+			//do inplace conversion
+			RGB32_2_YCbCr420(vd->framebuffer,vd->framebuffer,vd->width,vd->height);
+			written=s_encode_image(vd->framebuffer,buffer,1024,FORMAT_CbCr420,vd->width,vd->height,vd->framesizeIn);
+			break;
+			
+		case V4L2_PIX_FMT_YVU420://WARNING: this is not properly implemented yet
+		case V4L2_PIX_FMT_Y41P: //don't know how to handle
+		case V4L2_PIX_FMT_GREY: //don't include color information
+		default:
+			written=s_encode_image(vd->framebuffer,buffer,1024,FORMAT_CbCr400,vd->width,vd->height,vd->framesizeIn);
+			break;
+	};
+  return (written);
+}
+
+#else
 
 #define OUTPUT_BUF_SIZE  4096
 
@@ -134,7 +189,7 @@ Input Value.: video structure from v4l2uvc.c/h, destination buffer and buffersiz
               the buffer must be large enough, no error/size checking is done!
 Return Value: the buffer will contain the compressed data
 ******************************************************************************/
-int compress_yuyv_to_jpeg(struct vdIn *vd, unsigned char *buffer, int size, int quality)
+int compress_yuyv_to_jpeg(struct vdIn *vd, unsigned char *buffer, int size, int quality,uint32_t format)
 {
     struct jpeg_compress_struct cinfo;
     struct jpeg_error_mgr jerr;
@@ -165,7 +220,8 @@ int compress_yuyv_to_jpeg(struct vdIn *vd, unsigned char *buffer, int size, int 
     while(cinfo.next_scanline < vd->height) {
         int x;
         unsigned char *ptr = line_buffer;
-
+        
+        /*TODO: make sure you are dealing with V4L2_PIX_FMT_YUYV here */
         for(x = 0; x < vd->width; x++) {
             int r, g, b;
             int y, u, v;
@@ -203,3 +259,4 @@ int compress_yuyv_to_jpeg(struct vdIn *vd, unsigned char *buffer, int size, int 
     return (written);
 }
 
+#endif

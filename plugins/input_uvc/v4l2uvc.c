@@ -6,6 +6,7 @@
 # Copyright (C) 2005 2006 Laurent Pinchart &&  Michel Xhaard                   #
 #                    2007 Lucas van Staden                                     #
 #                    2007 Tom Stöveken                                         #
+#   Modifications Copyright (C) 2010  Vladimir S, Fonov                        #
 #                                                                              #
 # This program is free software; you can redistribute it and/or modify         #
 # it under the terms of the GNU General Public License as published by         #
@@ -171,13 +172,14 @@ int init_videoIn(struct vdIn *vd, char *device, int width,
             (unsigned char *) calloc(1, (size_t) vd->width * (vd->height + 8) * 2);
         break;
     case V4L2_PIX_FMT_YUYV:
+    default:
         vd->framebuffer =
             (unsigned char *) calloc(1, (size_t) vd->framesizeIn);
         break;
-    default:
+    /*    
         fprintf(stderr, " should never arrive exit fatal !!\n");
         goto error;
-        break;
+        break;*/
 
     }
 
@@ -252,13 +254,12 @@ static int init_v4l2(struct vdIn *vd)
          * look the format is not part of the deal ???
          */
         if(vd->formatIn != vd->fmt.fmt.pix.pixelformat) {
-            if(vd->formatIn == V4L2_PIX_FMT_MJPEG) {
-                fprintf(stderr, "The inpout device does not supports MJPEG mode\nYou may also try the YUV mode (-yuv option), but it requires a much more CPU power\n");
-                goto fatal;
-            } else if(vd->formatIn == V4L2_PIX_FMT_YUYV) {
-                fprintf(stderr, "The input device does not supports YUV mode\n");
-                goto fatal;
-            }
+            char fourcc1[5]={0,0,0,0,0};
+            char fourcc2[5]={0,0,0,0,0};
+            memmove(fourcc1,(char*)&vd->formatIn,4);
+            memmove(fourcc2,(char*)&vd->fmt.fmt.pix.pixelformat,4);
+            fprintf(stderr, " requested %s but got %s format instead\n",fourcc1,fourcc2);
+            vd->formatIn = vd->fmt.fmt.pix.pixelformat;
         } else {
             vd->formatIn = vd->fmt.fmt.pix.pixelformat;
         }
@@ -456,15 +457,15 @@ int uvcGrab(struct vdIn *vd)
         break;
 
     case V4L2_PIX_FMT_YUYV:
+    default:
         if(vd->buf.bytesused > vd->framesizeIn)
             memcpy(vd->framebuffer, vd->mem[vd->buf.index], (size_t) vd->framesizeIn);
         else
             memcpy(vd->framebuffer, vd->mem[vd->buf.index], (size_t) vd->buf.bytesused);
         break;
 
-    default:
-        goto err;
-        break;
+/*        goto err;
+        break;*/
     }
 
     ret = xioctl(vd->fd, VIDIOC_QBUF, &vd->buf);

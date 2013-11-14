@@ -41,8 +41,8 @@ APP_BINARY = mjpg_streamer
 PLUGINS = input_uvc.so
 PLUGINS += output_file.so
 PLUGINS += output_udp.so
-PLUGINS += output_http.so
-PLUGINS += input_testpicture.so
+#PLUGINS += output_http.so
+#PLUGINS += input_testpicture.so
 #PLUGINS += output_autofocus.so
 #PLUGINS += input_gspcav1.so
 PLUGINS += input_file.so
@@ -64,12 +64,16 @@ application: $(APP_BINARY)
 
 plugins: $(PLUGINS)
 
+export CC
+export CFLAGS
+export LFLAGS
+
 $(APP_BINARY): mjpg_streamer.c mjpg_streamer.h mjpg_streamer.o utils.c utils.h utils.o
 	$(CC) $(CFLAGS) $(OBJECTS) $(LFLAGS) -o $(APP_BINARY)
 	chmod 755 $(APP_BINARY)
 
 output_autofocus.so: mjpg_streamer.h utils.h
-	make -C plugins/output_autofocus all
+	make -C plugins/output_autofocus all 
 	cp plugins/output_autofocus/output_autofocus.so .
 
 input_testpicture.so: mjpg_streamer.h utils.h
@@ -171,3 +175,6 @@ uninstall:
 	for plug in $(PLUGINS); do \
 	  rm -f $(DESTDIR)/lib/$$plug; \
 	done;
+
+test_jpeg: test_jpeg.c simplified_jpeg_encoder.c simplified_jpeg_encoder.h
+	gcc -O0 -g simplified_jpeg_encoder.c test_jpeg.c  -o test_jpeg

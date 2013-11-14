@@ -94,6 +94,7 @@ int input_init(input_parameter *param, int id)
 {
     char *dev = "/dev/video0", *s;
     int width = 640, height = 480, fps = 5, format = V4L2_PIX_FMT_MJPEG, i;
+    char fourcc[5]={0,0,0,0,0};
     /* initialize the mutes variable */
     if(pthread_mutex_init(&cams[id].controls_mutex, NULL) != 0) {
         IPRINT("could not initialize mutex variable\n");
@@ -258,8 +259,10 @@ int input_init(input_parameter *param, int id)
     IPRINT("Using V4L2 device.: %s\n", dev);
     IPRINT("Desired Resolution: %i x %i\n", width, height);
     IPRINT("Frames Per Second.: %i\n", fps);
-    IPRINT("Format............: %s\n", (format == V4L2_PIX_FMT_YUYV) ? "YUV" : "MJPEG");
-    if(format == V4L2_PIX_FMT_YUYV)
+    
+    memmove(fourcc,(char*)&format,4);
+    IPRINT("Format............: %s\n", fourcc );
+    if(format != V4L2_PIX_FMT_MJPEG )
         IPRINT("JPEG Quality......: %d\n", gquality);
 
     DBG("vdIn pn: %d\n", id);
@@ -402,7 +405,7 @@ void *cam_thread(void *arg)
          * Getting JPEGs straight from the webcam, is one of the major advantages of
          * Linux-UVC compatible devices.
          */
-        if(pcontext->videoIn->formatIn == V4L2_PIX_FMT_YUYV) {
+        if(pcontext->videoIn->formatIn != V4L2_PIX_FMT_MJPEG) {
             DBG("compressing frame from input: %d\n", (int)pcontext->id);
             pglobal->in[pcontext->id].size = compress_yuyv_to_jpeg(pcontext->videoIn, pglobal->in[pcontext->id].buf, pcontext->videoIn->framesizeIn, gquality);
         } else {
