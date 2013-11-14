@@ -19,8 +19,10 @@ CC ?= gcc
 
 KERNELHEADERS ?= /usr/src/linux-headers-3.6-trunk-common/include/
 
-SVNDEV := -DSVN_REV=git
-CFLAGS += $(SVNDEV) -I$(KERNELHEADERS)
+#SVNDEV := -DSVN_REV="git"
+
+CFLAGS += $(SVNDEV)
+#-I$(KERNELHEADERS)
 
 # general compile flags, enable all warnings to make compile more verbose
 CFLAGS += -O2 -DLINUX -D_GNU_SOURCE -Wall 
