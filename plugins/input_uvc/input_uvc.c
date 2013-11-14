@@ -407,7 +407,7 @@ void *cam_thread(void *arg)
          */
         if(pcontext->videoIn->formatIn != V4L2_PIX_FMT_MJPEG) {
             DBG("compressing frame from input: %d\n", (int)pcontext->id);
-            pglobal->in[pcontext->id].size = compress_yuyv_to_jpeg(pcontext->videoIn, pglobal->in[pcontext->id].buf, pcontext->videoIn->framesizeIn, gquality);
+            pglobal->in[pcontext->id].size = compress_yuyv_to_jpeg(pcontext->videoIn, pglobal->in[pcontext->id].buf, pcontext->videoIn->framesizeIn, gquality, pcontext->videoIn->formatIn);
         } else {
             DBG("copying frame from input: %d\n", (int)pcontext->id);
             pglobal->in[pcontext->id].size = memcpy_picture(pglobal->in[pcontext->id].buf, pcontext->videoIn->tmpbuffer, pcontext->videoIn->buf.bytesused);
