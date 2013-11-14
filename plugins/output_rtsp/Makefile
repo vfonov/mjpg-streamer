@@ -9,7 +9,7 @@
 
 # Modified to work with the output_udp plugin by D.Zachariadis
 
-CC = gcc
+CC ?= gcc
 
 OTHER_HEADERS = ../../mjpg_streamer.h ../../utils.h ../output.h ../input.h
 
